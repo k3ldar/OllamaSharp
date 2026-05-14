@@ -15,7 +15,7 @@ public partial class AboutPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlertAsync("Error", $"Unable to open link: {ex.Message}", "OK");
+            await DisplayAlert("Error", $"Unable to open link: {ex.Message}", "OK");
         }
     }
 
@@ -27,7 +27,7 @@ public partial class AboutPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlertAsync("Error", $"Unable to open link: {ex.Message}", "OK");
+            await DisplayAlert("Error", $"Unable to open link: {ex.Message}", "OK");
         }
     }
 }

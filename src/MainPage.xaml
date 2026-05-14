@@ -1,8 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/maui/global"
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:OllamaSharp.ViewModels"
              xmlns:models="clr-namespace:OllamaSharp.Models"
+             xmlns:syncfusion="clr-namespace:Syncfusion.Maui.Toolkit.TextInputLayout;assembly=Syncfusion.Maui.Toolkit"
              x:Class="OllamaSharp.MainPage"
              x:DataType="vm:ChatViewModel">
 
@@ -25,8 +26,7 @@
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="models:ChatMessage">
                     <Grid Margin="0,0,0,0">
-                        <Border x:Name="Bubble"
-                                StrokeThickness="0"
+                        <Border StrokeThickness="0"
                                 Padding="25, 12"
                                 Margin="0, 0, 12, 0"
                                 MaximumWidthRequest="520"
@@ -49,8 +49,7 @@
                                 </HorizontalStackLayout>
 
                                 <!-- Message Text (visible when there's content) -->
-                                <Label x:Name="MessageText"
-                                       Text="{Binding Text}"
+                                <Label Text="{Binding Text}"
                                        TextColor="#222"
                                        LineBreakMode="WordWrap"
                                        IsVisible="{Binding IsThinking, Converter={StaticResource InvertedBoolConverter}}"/>
@@ -93,7 +92,7 @@
               ColumnSpacing="8">
 
             <!-- Text Input -->
-            <SfTextInputLayout ContainerType="Outlined"
+            <syncfusion:SfTextInputLayout ContainerType="Outlined"
                                Hint="Ask something…"
                                Grid.Column="0">
                 <Entry x:Name="PromptEditor"
@@ -104,7 +103,7 @@
                        MaxLength="4000"
                        Background="Transparent"
                        Margin="16,12"/>
-            </SfTextInputLayout>
+            </syncfusion:SfTextInputLayout>
 
             <!-- Send/Stop Button -->
             <Grid Grid.Column="1"

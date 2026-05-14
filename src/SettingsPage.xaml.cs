@@ -121,7 +121,7 @@ public partial class SettingsPage : ContentPage
 
         if (string.IsNullOrEmpty(serverUrl))
         {
-            await DisplayAlertAsync("Error", "Please enter a valid server URL first.", "OK");
+            await DisplayAlert("Error", "Please enter a valid server URL first.", "OK");
             return;
         }
 
