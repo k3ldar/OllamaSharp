@@ -48,7 +48,7 @@ public partial class AppShellViewModel : ObservableObject
         try
         {
             // Show confirmation dialog
-            bool confirmed = await Shell.Current.DisplayAlertAsync(
+            bool confirmed = await Shell.Current.DisplayAlert(
                 "Delete Chat",
                 $"Are you sure you want to delete '{chat.Title}'?",
                 "Delete",
@@ -74,7 +74,7 @@ public partial class AppShellViewModel : ObservableObject
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error deleting chat: {ex.Message}");
-            await Shell.Current.DisplayAlertAsync("Error", $"Failed to delete chat: {ex.Message}", "OK");
+            await Shell.Current.DisplayAlert("Error", $"Failed to delete chat: {ex.Message}", "OK");
         }
     }
 
