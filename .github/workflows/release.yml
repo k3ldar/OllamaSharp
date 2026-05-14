@@ -53,7 +53,7 @@ jobs:
       run: dotnet restore src/OllamaSharp.csproj
 
     - name: Build and Publish Windows
-      run: dotnet publish src/OllamaSharp.csproj -f net9.0-windows10.0.19041.0 -c Release -p:RuntimeIdentifier=win-x64 -p:PublishSingleFile=true --self-contained false
+      run: dotnet publish src/OllamaSharp.csproj -f net9.0-windows10.0.19041.0 -c Release -p:RuntimeIdentifier=win-x64
 
     - name: Upload Windows artifact
       uses: actions/upload-artifact@v4
@@ -90,8 +90,32 @@ jobs:
         path: src/bin/Release/net9.0-ios/iossimulator-x64/*
         if-no-files-found: error
 
+  # iOS build temporarily disabled due to Xcode version mismatch in GitHub runners
+  # Re-enable when .NET 9 iOS workload is fixed or use self-hosted runner
+  # build-ios:
+  #   runs-on: macos-latest
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v4
+  #   - name: Setup .NET
+  #     uses: actions/setup-dotnet@v4
+  #     with:
+  #       dotnet-version: '9.0.x'
+  #   - name: Install .NET MAUI workload
+  #     run: dotnet workload install maui
+  #   - name: Restore dependencies
+  #     run: dotnet restore src/OllamaSharp.csproj
+  #   - name: Build iOS (unsigned)
+  #     run: dotnet build src/OllamaSharp.csproj -f net9.0-ios -c Release
+  #   - name: Upload iOS artifact
+  #     uses: actions/upload-artifact@v4
+  #     with:
+  #       name: ios-app
+  #       path: src/bin/Release/net9.0-ios/iossimulator-x64/*
+  #       if-no-files-found: error
+
   create-release:
-    needs: [build-android, build-windows, build-ios]
+    needs: [build-android, build-windows]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -108,7 +132,6 @@ jobs:
         files: |
           artifacts/android-apk/*.apk
           artifacts/windows-x64/*
-          artifacts/ios-app/*
         draft: false
         prerelease: false
         generate_release_notes: true
