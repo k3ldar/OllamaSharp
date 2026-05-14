@@ -1,0 +1,133 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/maui/global"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:OllamaSharp.ViewModels"
+             xmlns:models="clr-namespace:OllamaSharp.Models"
+             x:Class="OllamaSharp.MainPage"
+             x:DataType="vm:ChatViewModel">
+
+    <Grid RowDefinitions="*,Auto"
+          Padding="10"
+          RowSpacing="8">
+        <!-- Chat messages -->
+        <CollectionView Grid.Row="0"
+                        x:Name="MessagesView"
+                        ItemsSource="{Binding Messages}"
+                        ItemsUpdatingScrollMode="KeepLastItemInView"
+                        Background="Transparent"
+                        Scrolled="OnScrolled"
+                        RemainingItemsThreshold="1"
+                        SelectionMode="None">
+            <CollectionView.ItemsLayout>
+                <LinearItemsLayout Orientation="Vertical"
+                                   ItemSpacing="8"/>
+            </CollectionView.ItemsLayout>
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:ChatMessage">
+                    <Grid Margin="0,0,0,0">
+                        <Border x:Name="Bubble"
+                                StrokeThickness="0"
+                                Padding="25, 12"
+                                Margin="0, 0, 12, 0"
+                                MaximumWidthRequest="520"
+                                Background="#F1F1F1"
+                                HorizontalOptions="Start"
+                                StrokeShape="RoundRectangle 14">
+                            <VerticalStackLayout Spacing="4">
+                                <!-- Typing Indicator (visible when assistant message is empty) -->
+                                <HorizontalStackLayout Spacing="4" 
+                                                       IsVisible="{Binding IsThinking}">
+                                    <ActivityIndicator IsRunning="True"
+                                                       Color="{StaticResource Primary}"
+                                                       WidthRequest="16"
+                                                       HeightRequest="16"
+                                                       VerticalOptions="Center"/>
+                                    <Label Text="Thinking..."
+                                           TextColor="#888"
+                                           FontSize="12"
+                                           VerticalOptions="Center"/>
+                                </HorizontalStackLayout>
+
+                                <!-- Message Text (visible when there's content) -->
+                                <Label x:Name="MessageText"
+                                       Text="{Binding Text}"
+                                       TextColor="#222"
+                                       LineBreakMode="WordWrap"
+                                       IsVisible="{Binding IsThinking, Converter={StaticResource InvertedBoolConverter}}"/>
+
+                                <Label Text="{Binding Timestamp, StringFormat='{0:t}'}"
+                                       FontSize="10"
+                                       TextColor="#888"
+                                       HorizontalTextAlignment="End"
+                                       IsVisible="{Binding IsThinking, Converter={StaticResource InvertedBoolConverter}}"/>
+                            </VerticalStackLayout>
+                            <Border.Triggers>
+                                <DataTrigger TargetType="Border"
+                                             Binding="{Binding From}"
+                                             Value="User">
+                                    <Setter Property="HorizontalOptions"
+                                            Value="End"/>
+                                    <Setter Property="Background"
+                                            Value="#D1E8FF"/>
+                                    <Setter Property="Padding"
+                                            Value="12,12,12,12"/>
+                                </DataTrigger>
+                            </Border.Triggers>
+                        </Border>
+                        <Grid.Triggers>
+                            <DataTrigger TargetType="Grid"
+                                         Binding="{Binding From}"
+                                         Value="User">
+                                <Setter Property="Margin"
+                                        Value="0,0,20,0"/>
+                            </DataTrigger>
+                        </Grid.Triggers>
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- Input Area -->
+        <Grid Grid.Row="1" 
+              ColumnDefinitions="*,Auto"
+              ColumnSpacing="8">
+
+            <!-- Text Input -->
+            <SfTextInputLayout ContainerType="Outlined"
+                               Hint="Ask something…"
+                               Grid.Column="0">
+                <Entry x:Name="PromptEditor"
+                       Text="{Binding InputText, Mode=TwoWay}"
+                       Completed="OnCompleted"
+                       TextChanged="OnTextChanged"
+                       Keyboard="Chat"
+                       MaxLength="4000"
+                       Background="Transparent"
+                       Margin="16,12"/>
+            </SfTextInputLayout>
+
+            <!-- Send/Stop Button -->
+            <Grid Grid.Column="1"
+                  VerticalOptions="Center">
+                <!-- Send Button -->
+                <ImageButton Source="sendicon.png"
+                             Background="Transparent"
+                             Command="{Binding SendCommand}"
+                             WidthRequest="44"
+                             HeightRequest="44"
+                             Padding="10"
+                             IsVisible="{Binding IsGenerating, Converter={StaticResource InvertedBoolConverter}}"/>
+
+                <!-- Stop Button -->
+                <ImageButton Source="stopicon.png"
+                             Background="Transparent"
+                             Command="{Binding StopCommand}"
+                             WidthRequest="44"
+                             HeightRequest="44"
+                             Padding="10"
+                             IsVisible="{Binding IsGenerating}"/>
+            </Grid>
+        </Grid>
+    </Grid>
+
+</ContentPage>

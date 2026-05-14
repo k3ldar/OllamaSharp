@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/maui/global"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OllamaSharp.SettingsPage"
+             Title="Settings">
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="20">
+            <Label Text="Settings"
+                   FontSize="24"
+                   FontAttributes="Bold"/>
+
+            <!-- Server Settings -->
+            <Border Stroke="LightGray"
+                    StrokeThickness="1"
+                    Padding="15"
+                    StrokeShape="RoundRectangle 8">
+                <VerticalStackLayout Spacing="15">
+                    <Label Text="Server Settings"
+                           FontSize="18"
+                           FontAttributes="Bold"/>
+
+                    <!-- Server URL -->
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="Ollama Server URL"
+                               FontSize="14"
+                               FontAttributes="Bold"/>
+                        <Label Text="The base URL of your Ollama server"
+                               FontSize="12"
+                               TextColor="Gray"/>
+                        <Entry x:Name="ServerUrlEntry"
+                               Placeholder="e.g., http://localhost:11434"
+                               Text="http://localhost:11434"
+                               Keyboard="Url"
+                               TextChanged="OnServerUrlChanged"/>
+                    </VerticalStackLayout>
+
+                    <!-- Model Name -->
+                    <VerticalStackLayout Spacing="5">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Text="Model"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   VerticalOptions="Center"
+                                   Grid.Column="0"/>
+                            <Button x:Name="RefreshModelsButton"
+                                    Text="🔄"
+                                    FontSize="18"
+                                    BackgroundColor="Transparent"
+                                    BorderWidth="1"
+                                    BorderColor="LightGray"
+                                    Padding="8"
+                                    WidthRequest="40"
+                                    HeightRequest="40"
+                                    Grid.Column="1"
+                                    Clicked="OnRefreshModelsClicked"
+                                    ToolTipProperties.Text="Refresh model list"/>
+                        </Grid>
+                        <Label Text="Select the Ollama model to use"
+                               FontSize="12"
+                               TextColor="Gray"/>
+                        <Picker x:Name="ModelPicker"
+                                Title="Select a model"
+                                SelectedIndexChanged="OnModelSelectionChanged"/>
+                        <Label x:Name="ModelStatusLabel"
+                               FontSize="11"
+                               TextColor="Gray"
+                               IsVisible="False"/>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Chat Settings -->
+            <Border Stroke="LightGray"
+                    StrokeThickness="1"
+                    Padding="15"
+                    StrokeShape="RoundRectangle 8">
+                <VerticalStackLayout Spacing="15">
+                    <Label Text="Chat Settings"
+                           FontSize="18"
+                           FontAttributes="Bold"/>
+
+                    <!-- System Role -->
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="System Role"
+                               FontSize="14"
+                               FontAttributes="Bold"/>
+                        <Label Text="Defines how the AI should behave"
+                               FontSize="12"
+                               TextColor="Gray"/>
+                        <Entry x:Name="SystemRoleEntry"
+                               Placeholder="e.g., 'You are a senior programmer'"
+                               Text="You are lord of the universe and treat everyone like a servant, but still helpful at answering questions"
+                               MaxLength="500"
+                               TextChanged="OnSystemRoleChanged"/>
+                    </VerticalStackLayout>
+
+                    <!-- Context Length -->
+                    <VerticalStackLayout Spacing="5">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Text="Context Length (pairs)"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   VerticalOptions="Center"
+                                   Grid.Column="0"/>
+                            <Label x:Name="ContextValueLabel"
+                                   Text="15"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   TextColor="#512BD4"
+                                   VerticalOptions="Center"
+                                   Grid.Column="1"/>
+                        </Grid>
+                        <Label Text="Number of message pairs to keep in history"
+                               FontSize="12"
+                               TextColor="Gray"/>
+                        <Slider x:Name="ContextSlider"
+                                Minimum="5"
+                                Maximum="30"
+                                Value="15"
+                                ValueChanged="OnContextLengthChanged"/>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
