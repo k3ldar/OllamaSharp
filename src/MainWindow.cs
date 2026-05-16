@@ -2,31 +2,40 @@ using Microsoft.Maui.Controls;
 
 namespace OllamaSharp;
 
-public class MainWindow : Window
+public partial class MainWindow : Window
 {
     private const string PrefKeyX = "WindowX";
     private const string PrefKeyY = "WindowY";
     private const string PrefKeyWidth = "WindowWidth";
     private const string PrefKeyHeight = "WindowHeight";
 
+    private const double DefaultMinimumWidth = 400;
+    private const double DefaultMinimumHeight = 500;
+    private const double InvalidPosition = -1.0;
+    private const double DefaultWindowWidth = 800.0;
+    private const double DefaultWindowHeight = 600.0;
+    private const double MinVisiblePixelsWidth = 100;
+    private const double MinVisiblePixelsHeight = 50;
+    private const double VisibleAreaPercentage = 0.3;
+
     public MainWindow(Page page) : base(page)
     {
         // Set minimum window size
-        MinimumWidth = 400;
-        MinimumHeight = 500;
+        MinimumWidth = DefaultMinimumWidth;
+        MinimumHeight = DefaultMinimumHeight;
 
         // Restore window size and position
         Created += OnWindowCreated;
         Destroying += OnWindowDestroying;
     }
 
-    private void OnWindowCreated(object? sender, EventArgs e)
+    private void OnWindowCreated(object sender, EventArgs e)
     {
         // Load saved preferences
-        var savedX = Preferences.Get(PrefKeyX, -1.0);
-        var savedY = Preferences.Get(PrefKeyY, -1.0);
-        var savedWidth = Preferences.Get(PrefKeyWidth, 800.0);
-        var savedHeight = Preferences.Get(PrefKeyHeight, 600.0);
+        var savedX = Preferences.Get(PrefKeyX, InvalidPosition);
+        var savedY = Preferences.Get(PrefKeyY, InvalidPosition);
+        var savedWidth = Preferences.Get(PrefKeyWidth, DefaultWindowWidth);
+        var savedHeight = Preferences.Get(PrefKeyHeight, DefaultWindowHeight);
 
         // Apply saved size (always safe)
         Width = savedWidth;
@@ -45,12 +54,12 @@ public class MainWindow : Window
             else
             {
                 // Position is outside screen bounds, let the OS decide
-                System.Diagnostics.Debug.WriteLine("Saved window position is outside screen bounds. Using default position.");
+                System.Diagnostics.Debug.WriteLine(Constants.DebugMsgWindowPosOutsideOfBounds);
             }
         }
     }
 
-    private void OnWindowDestroying(object? sender, EventArgs e)
+    private void OnWindowDestroying(object sender, EventArgs e)
     {
         // Save current window position and size
         Preferences.Set(PrefKeyX, X);
@@ -61,15 +70,12 @@ public class MainWindow : Window
         System.Diagnostics.Debug.WriteLine($"Saved window: X={X}, Y={Y}, Width={Width}, Height={Height}");
     }
 
-    private bool IsPositionWithinScreenBounds(double x, double y, double width, double height)
+    private static bool IsPositionWithinScreenBounds(double x, double y, double width, double height)
     {
         try
         {
             // Get the display information
             var mainDisplay = DeviceDisplay.Current.MainDisplayInfo;
-
-            if (mainDisplay == null)
-                return false;
 
             // Convert display density to actual pixels
             var screenWidth = mainDisplay.Width / mainDisplay.Density;
@@ -77,8 +83,8 @@ public class MainWindow : Window
 
             // Check if at least 100px of the window is visible on screen
             // This ensures the window title bar is accessible
-            var minVisibleWidth = Math.Min(100, width * 0.3);
-            var minVisibleHeight = Math.Min(50, height * 0.3);
+            var minVisibleWidth = Math.Min(MinVisiblePixelsWidth, width * VisibleAreaPercentage);
+            var minVisibleHeight = Math.Min(MinVisiblePixelsHeight, height * VisibleAreaPercentage);
 
             var rightEdge = x + width;
             var bottomEdge = y + height;

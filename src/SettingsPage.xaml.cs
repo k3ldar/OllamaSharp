@@ -14,7 +14,11 @@ public partial class SettingsPage : ContentPage
     public const string PrefKeySystemRole = "SystemRole";
     public const string PrefKeyMaxHistoryPairs = "MaxHistoryPairs";
     public const string PrefKeyModelList = "ModelList";
-
+    private const string ErrChatNotRegistered = "OllamaChatService not registered";
+    private const string ClickToRefresh = "Click refresh to load models";
+    private const string ErrEnterValidURL = "Please enter a valid server URL first.";
+    private const string LoadingModels = "Loading models...";
+    private const string ErrNoModels = "No models found";
     private readonly HttpClient _httpClient = new();
     private readonly OllamaChatService _chatService;
 
@@ -24,7 +28,7 @@ public partial class SettingsPage : ContentPage
 
         // Get the chat service from DI
         _chatService = Application.Current?.Handler?.MauiContext?.Services?.GetRequiredService<OllamaChatService>()
-            ?? throw new InvalidOperationException("OllamaChatService not registered");
+            ?? throw new InvalidOperationException(ErrChatNotRegistered);
 
         LoadSettings();
     }
@@ -32,10 +36,10 @@ public partial class SettingsPage : ContentPage
     private void LoadSettings()
     {
         // Load saved settings or use defaults
-        var serverUrl = Preferences.Get(PrefKeyServerUrl, "http://localhost:11434");
-        var modelName = Preferences.Get(PrefKeyModelName, "llama3.2:3b");
-        var systemRole = Preferences.Get(PrefKeySystemRole, "You are lord of the universe and treat everyone like a servant, but still helpful at answering questions");
-        var maxHistoryPairs = Preferences.Get(PrefKeyMaxHistoryPairs, 15);
+        var serverUrl = Preferences.Get(PrefKeyServerUrl, Constants.DefaultOllamaUrl);
+        var modelName = Preferences.Get(PrefKeyModelName, Constants.DefaultModel);
+        var systemRole = Preferences.Get(PrefKeySystemRole, Constants.DefaultSystemBehaviour);
+        var maxHistoryPairs = Preferences.Get(PrefKeyMaxHistoryPairs, Constants.DefaultMaxHistoryPairs);
 
         ServerUrlEntry.Text = serverUrl;
         SystemRoleEntry.Text = systemRole;
@@ -56,12 +60,14 @@ public partial class SettingsPage : ContentPage
             try
             {
                 var models = JsonSerializer.Deserialize<List<string>>(modelListJson);
+
                 if (models != null && models.Count > 0)
                 {
                     ModelPicker.ItemsSource = models;
 
                     // Select the saved model
                     var index = models.IndexOf(selectedModel);
+
                     if (index >= 0)
                     {
                         ModelPicker.SelectedIndex = index;
@@ -82,25 +88,25 @@ public partial class SettingsPage : ContentPage
         // No cached models, show default
         ModelPicker.ItemsSource = new List<string> { selectedModel };
         ModelPicker.SelectedIndex = 0;
-        ModelStatusLabel.Text = "Click refresh to load models";
+        ModelStatusLabel.Text = ClickToRefresh;
         ModelStatusLabel.TextColor = Colors.Orange;
         ModelStatusLabel.IsVisible = true;
     }
 
-    private void OnServerUrlChanged(object? sender, TextChangedEventArgs e)
+    private void OnServerUrlChanged(object sender, TextChangedEventArgs e)
     {
         // Save the server URL preference
-        var newUrl = e.NewTextValue ?? "http://localhost:11434";
+        var newUrl = e.NewTextValue ?? Constants.DefaultOllamaUrl;
         Preferences.Set(PrefKeyServerUrl, newUrl);
 
         // Update the service configuration
-        var currentModel = Preferences.Get(PrefKeyModelName, "llama3.2:3b");
+        var currentModel = Preferences.Get(PrefKeyModelName, Constants.DefaultModel);
         _chatService.UpdateConfiguration(newUrl, currentModel);
 
         System.Diagnostics.Debug.WriteLine($"Server URL updated and applied: {newUrl}");
     }
 
-    private void OnModelSelectionChanged(object? sender, EventArgs e)
+    private void OnModelSelectionChanged(object sender, EventArgs e)
     {
         if (ModelPicker.SelectedItem is string selectedModel)
         {
@@ -108,26 +114,26 @@ public partial class SettingsPage : ContentPage
             Preferences.Set(PrefKeyModelName, selectedModel);
 
             // Update the service configuration
-            var currentUrl = Preferences.Get(PrefKeyServerUrl, "http://localhost:11434");
+            var currentUrl = Preferences.Get(PrefKeyServerUrl, Constants.DefaultOllamaUrl);
             _chatService.UpdateConfiguration(currentUrl, selectedModel);
 
             System.Diagnostics.Debug.WriteLine($"Model selected and applied: {selectedModel}");
         }
     }
 
-    private async void OnRefreshModelsClicked(object? sender, EventArgs e)
+    private async void OnRefreshModelsClicked(object sender, EventArgs e)
     {
         var serverUrl = ServerUrlEntry.Text?.Trim();
 
         if (string.IsNullOrEmpty(serverUrl))
         {
-            await DisplayAlert("Error", "Please enter a valid server URL first.", "OK");
+            await DisplayAlertAsync(Constants.Error, ErrEnterValidURL, Constants.DialogButtonTextOk);
             return;
         }
 
         // Disable button during refresh
         RefreshModelsButton.IsEnabled = false;
-        ModelStatusLabel.Text = "Loading models...";
+        ModelStatusLabel.Text = LoadingModels;
         ModelStatusLabel.TextColor = Colors.Gray;
         ModelStatusLabel.IsVisible = true;
 
@@ -142,7 +148,7 @@ public partial class SettingsPage : ContentPage
                 ModelPicker.ItemsSource = models;
 
                 // Try to select the previously selected model
-                var currentModel = Preferences.Get(PrefKeyModelName, "llama3.2:3b");
+                var currentModel = Preferences.Get(PrefKeyModelName, Constants.DefaultModel);
                 var index = models.IndexOf(currentModel);
                 ModelPicker.SelectedIndex = index >= 0 ? index : 0;
 
@@ -155,7 +161,7 @@ public partial class SettingsPage : ContentPage
             }
             else
             {
-                ModelStatusLabel.Text = "No models found";
+                ModelStatusLabel.Text = ErrNoModels;
                 ModelStatusLabel.TextColor = Colors.Orange;
             }
         }
@@ -176,8 +182,8 @@ public partial class SettingsPage : ContentPage
         var models = new List<string>();
 
         // Ensure base URL ends with /
-        if (!baseUrl.EndsWith('/'))
-            baseUrl += '/';
+        if (!baseUrl.EndsWith(Constants.CharForwardSlash))
+            baseUrl += Constants.CharForwardSlash;
 
         var url = $"{baseUrl}api/tags";
 
@@ -191,7 +197,7 @@ public partial class SettingsPage : ContentPage
 
             if (result?.Models != null)
             {
-                models = result.Models.Select(m => m.Name ?? "").Where(n => !string.IsNullOrEmpty(n)).ToList();
+                models = [.. result.Models.Select(m => m.Name ?? "").Where(n => !string.IsNullOrEmpty(n))];
             }
         }
         catch (HttpRequestException ex)
@@ -206,14 +212,14 @@ public partial class SettingsPage : ContentPage
         return models;
     }
 
-    private void OnSystemRoleChanged(object? sender, TextChangedEventArgs e)
+    private void OnSystemRoleChanged(object sender, TextChangedEventArgs e)
     {
         // Save the system role preference
-        Preferences.Set(PrefKeySystemRole, e.NewTextValue ?? "You are lord of the universe and treat everyone like a servant, but still helpful at answering questions");
+        Preferences.Set(PrefKeySystemRole, e.NewTextValue ?? Constants.DefaultSystemBehaviour);
         System.Diagnostics.Debug.WriteLine($"System role updated: {e.NewTextValue}");
     }
 
-    private void OnContextLengthChanged(object? sender, ValueChangedEventArgs e)
+    private void OnContextLengthChanged(object sender, ValueChangedEventArgs e)
     {
         // Update the label and save the preference
         int value = (int)e.NewValue;
@@ -227,17 +233,17 @@ public partial class SettingsPage : ContentPage
 public class OllamaTagsResponse
 {
     [JsonPropertyName("models")]
-    public List<OllamaModelInfo>? Models { get; set; }
+    public List<OllamaModelInfo> Models { get; set; }
 }
 
 public class OllamaModelInfo
 {
     [JsonPropertyName("name")]
-    public string? Name { get; set; }
+    public string Name { get; set; }
 
     [JsonPropertyName("size")]
     public long Size { get; set; }
 
     [JsonPropertyName("modified_at")]
-    public string? ModifiedAt { get; set; }
+    public string ModifiedAt { get; set; }
 }

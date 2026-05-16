@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:OllamaSharp"
              x:Class="OllamaSharp.SettingsPage"
              Title="Settings">
     <ScrollView>
@@ -28,8 +29,8 @@
                                FontSize="12"
                                TextColor="Gray"/>
                         <Entry x:Name="ServerUrlEntry"
-                               Placeholder="e.g., http://localhost:11434"
-                               Text="http://localhost:11434"
+                               Placeholder="e.g., {x:Static local:Constants.DefaultOllamaUrl}"
+                               Text="{x:Static local:Constants.DefaultOllamaUrl}"
                                Keyboard="Url"
                                TextChanged="OnServerUrlChanged"/>
                     </VerticalStackLayout>
@@ -89,7 +90,7 @@
                                TextColor="Gray"/>
                         <Entry x:Name="SystemRoleEntry"
                                Placeholder="e.g., 'You are a senior programmer'"
-                               Text="You are lord of the universe and treat everyone like a servant, but still helpful at answering questions"
+                               Text="{x:Static local:Constants.DefaultSystemBehaviour}"
                                MaxLength="500"
                                TextChanged="OnSystemRoleChanged"/>
                     </VerticalStackLayout>

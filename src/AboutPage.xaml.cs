@@ -9,25 +9,23 @@ public partial class AboutPage : ContentPage
 
     private async void OnGitHubTapped(object sender, EventArgs e)
     {
-        try
-        {
-            await Launcher.OpenAsync(new Uri("https://github.com/k3ldar/OllamaSharp"));
-        }
-        catch (Exception ex)
-        {
-            await DisplayAlert("Error", $"Unable to open link: {ex.Message}", "OK");
-        }
+        OpenLink(Constants.UriGithubRepo);
     }
 
     private async void OnIssuesTapped(object sender, EventArgs e)
     {
+        OpenLink(Constants.UriGithubIssues);
+    }
+
+    private async void OpenLink(string url)
+    {
         try
         {
-            await Launcher.OpenAsync(new Uri("https://github.com/k3ldar/OllamaSharp/issues"));
+            await Launcher.OpenAsync(new Uri(url));
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Error", $"Unable to open link: {ex.Message}", "OK");
+            await DisplayAlertAsync(Constants.Error, $"Unable to open link: {ex.Message}", Constants.DialogButtonTextOk);
         }
     }
 }

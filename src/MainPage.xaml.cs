@@ -6,15 +6,17 @@ namespace OllamaSharp;
 public partial class MainPage : ContentPage
 {
 	private const double BottomThresholdPixels = 20; // How close to bottom counts as "at bottom"
-
-	private readonly ChatViewModel _viewModel;
+    private const string ErrChatViewModelNoteRegistered = "ChatViewModel not registered";
+    private const string MsgUnsubscribedFromStreaming = "Unsubscribed from previous streaming message";
+    private const string MsgSubscribedToStreaming = "Subscribed to new streaming message";
+    private readonly ChatViewModel _viewModel;
 	private bool _shouldAutoScroll = true;
 	private bool _userHasInputData = false;
-    private ChatMessage? _currentStreamingMessage = null;
+    private ChatMessage _currentStreamingMessage = null;
 
 	public MainPage() : this(
 		Application.Current?.Handler?.MauiContext?.Services?.GetRequiredService<ChatViewModel>()
-		?? throw new InvalidOperationException("ChatViewModel not registered"))
+		?? throw new InvalidOperationException(ErrChatViewModelNoteRegistered))
 	{ }
 
 	public MainPage(ChatViewModel vm)
@@ -27,7 +29,7 @@ public partial class MainPage : ContentPage
 		vm.Messages.CollectionChanged += OnMessagesCollectionChanged;
 	}
 
-	private void OnMessagesCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+	private void OnMessagesCollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
 	{
 		// When a new message is added
 		if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add && e.NewItems != null)
@@ -52,29 +54,28 @@ public partial class MainPage : ContentPage
 						if (_currentStreamingMessage != null)
 						{
 							_currentStreamingMessage.PropertyChanged -= OnStreamingMessageChanged;
-							System.Diagnostics.Debug.WriteLine("Unsubscribed from previous streaming message");
+							System.Diagnostics.Debug.WriteLine(MsgUnsubscribedFromStreaming);
 						}
 
 						_currentStreamingMessage = msg;
 						_currentStreamingMessage.PropertyChanged += OnStreamingMessageChanged;
-						System.Diagnostics.Debug.WriteLine("Subscribed to new streaming message");
+						System.Diagnostics.Debug.WriteLine(MsgSubscribedToStreaming);
 					}
 				}
 			}
 		}
 	}
 
-	private void OnStreamingMessageChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+	private void OnStreamingMessageChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
 	{
 		// When the streaming message text changes, auto-scroll if user hasn't scrolled away
 		if (e.PropertyName == nameof(ChatMessage.Text))
 		{
-			var msg = sender as ChatMessage;
 			ScrollToBottom();
 		}
 	}
 
-	private void OnScrolled(object? sender, ItemsViewScrolledEventArgs e)
+	private void OnScrolled(object sender, ItemsViewScrolledEventArgs e)
 	{
 		if (_userHasInputData)
 		{
@@ -110,7 +111,7 @@ public partial class MainPage : ContentPage
 	}
 
 	// Enter key from Editor triggers Send
-	private void OnCompleted(object? sender, EventArgs e)
+	private void OnCompleted(object sender, EventArgs e)
 	{
 		if (BindingContext is ChatViewModel vm && vm.SendCommand.CanExecute(null))
 		{
@@ -119,16 +120,18 @@ public partial class MainPage : ContentPage
         }
 	}
 
-	private void OnTextChanged(object? sender, TextChangedEventArgs e)
+	private void OnTextChanged(object sender, TextChangedEventArgs e)
 	{
 		// If user presses Enter, many platforms insert '\n' into the Editor.
 		// When we detect trailing newline and there's text before it, submit.
 		var text = e.NewTextValue ?? string.Empty;
-		if (text.EndsWith("\n", StringComparison.Ordinal))
+
+		if (text.EndsWith(Constants.CharLineFeed.ToString(), StringComparison.Ordinal))
 		{
 			if (BindingContext is ChatViewModel vm)
 			{
-				vm.InputText = text.TrimEnd('\r', '\n');
+				vm.InputText = text.TrimEnd(Constants.CharCarriageReturn, Constants.CharLineFeed);
+
 				if (vm.SendCommand.CanExecute(null))
 					vm.SendCommand.Execute(null);
 			}

@@ -9,11 +9,12 @@ namespace OllamaSharp.ViewModels;
 
 public partial class AppShellViewModel : ObservableObject
 {
+    private const string TitleDeleteChat = "Delete Chat";
     private readonly ChatStorageService _storageService;
     private readonly ChatViewModel _chatViewModel;
 
     [ObservableProperty]
-    private ObservableCollection<SavedChat> _savedChats = new();
+    private ObservableCollection<SavedChat> _savedChats = [];
 
     public AppShellViewModel(ChatStorageService storageService, ChatViewModel chatViewModel)
     {
@@ -48,11 +49,11 @@ public partial class AppShellViewModel : ObservableObject
         try
         {
             // Show confirmation dialog
-            bool confirmed = await Shell.Current.DisplayAlert(
-                "Delete Chat",
+            bool confirmed = await Shell.Current.DisplayAlertAsync(
+                TitleDeleteChat,
                 $"Are you sure you want to delete '{chat.Title}'?",
-                "Delete",
-                "Cancel");
+                Constants.DialogButtonDelete,
+                Constants.DialogButtonTextCancel);
 
             if (!confirmed)
             {
@@ -74,7 +75,7 @@ public partial class AppShellViewModel : ObservableObject
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error deleting chat: {ex.Message}");
-            await Shell.Current.DisplayAlert("Error", $"Failed to delete chat: {ex.Message}", "OK");
+            await Shell.Current.DisplayAlertAsync(Constants.Error, $"Failed to delete chat: {ex.Message}", Constants.DialogButtonTextOk);
         }
     }
 
@@ -83,6 +84,17 @@ public partial class AppShellViewModel : ObservableObject
     {
         try
         {
+            System.Diagnostics.Debug.WriteLine($"OpenChat called for: {chat?.Title}");
+
+            if (chat == null)
+            {
+                System.Diagnostics.Debug.WriteLine(Constants.DebugMsgChatParameterNull);
+                return;
+            }
+
+            // Close the flyout first
+            Shell.Current.FlyoutIsPresented = false;
+
             // Auto-save current chat before switching (if it has messages)
             await _chatViewModel.SaveCurrentChatAsync();
 
@@ -90,10 +102,7 @@ public partial class AppShellViewModel : ObservableObject
             await _chatViewModel.LoadChatAsync(chat);
 
             // Navigate to MainPage
-            await Shell.Current.GoToAsync("//MainPage");
-
-            // Close the flyout
-            Shell.Current.FlyoutIsPresented = false;
+            await Shell.Current.GoToAsync(Constants.PageMain);
 
             // Reload saved chats to update order
             await LoadSavedChats();
@@ -103,6 +112,8 @@ public partial class AppShellViewModel : ObservableObject
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error opening chat: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+            await Shell.Current.DisplayAlertAsync(Constants.Error, $"Failed to open chat: {ex.Message}", Constants.DialogButtonTextOk);
         }
     }
 
@@ -118,12 +129,12 @@ public partial class AppShellViewModel : ObservableObject
             _chatViewModel.StartNewChat();
 
             // Navigate to MainPage
-            await Shell.Current.GoToAsync("//MainPage");
+            await Shell.Current.GoToAsync(Constants.PageMain);
 
             // Close the flyout
             Shell.Current.FlyoutIsPresented = false;
 
-            System.Diagnostics.Debug.WriteLine("Started new chat");
+            System.Diagnostics.Debug.WriteLine(Constants.DebugMsgNewChatStarted);
         }
         catch (Exception ex)
         {
@@ -132,11 +143,11 @@ public partial class AppShellViewModel : ObservableObject
     }
 
     [RelayCommand]
-    public async Task NavigateToSettings()
+    public static async Task NavigateToSettings()
     {
         try
         {
-            await Shell.Current.GoToAsync("//SettingsPage");
+            await Shell.Current.GoToAsync(Constants.PageSettings);
 
             // Close the flyout
             Shell.Current.FlyoutIsPresented = false;
@@ -148,11 +159,11 @@ public partial class AppShellViewModel : ObservableObject
     }
 
     [RelayCommand]
-    public async Task NavigateToAbout()
+    public static async Task NavigateToAbout()
     {
         try
         {
-            await Shell.Current.GoToAsync("//AboutPage");
+            await Shell.Current.GoToAsync(Constants.PageAbout);
 
             // Close the flyout
             Shell.Current.FlyoutIsPresented = false;

@@ -5,11 +5,19 @@ namespace OllamaSharp.Services;
 
 public class ChatStorageService
 {
+    private const int TitleMaxNumberOfWords = 5;
+    private const string DefaultNewChatTitle = "New Chat";
     private readonly string _chatsDirectory;
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true,
+        WriteIndented = true
+    };
 
     public ChatStorageService()
     {
-        _chatsDirectory = Path.Combine(FileSystem.AppDataDirectory, "Chats");
+        _chatsDirectory = Path.Combine(FileSystem.AppDataDirectory, Constants.RecentChatFolderName);
 
         // Ensure the Chats directory exists
         if (!Directory.Exists(_chatsDirectory))
@@ -26,10 +34,7 @@ public class ChatStorageService
         try
         {
             var filePath = Path.Combine(_chatsDirectory, $"{chat.Id}.json");
-            var json = JsonSerializer.Serialize(chat, new JsonSerializerOptions 
-            { 
-                WriteIndented = true 
-            });
+            var json = JsonSerializer.Serialize(chat, _jsonOptions);
 
             await File.WriteAllTextAsync(filePath, json);
             System.Diagnostics.Debug.WriteLine($"Chat saved: {chat.Title} ({chat.Id})");
@@ -41,7 +46,7 @@ public class ChatStorageService
         }
     }
 
-    public async Task<SavedChat?> LoadChatAsync(Guid id)
+    public async Task<SavedChat> LoadChatAsync(Guid id)
     {
         try
         {
@@ -54,7 +59,7 @@ public class ChatStorageService
             }
 
             var json = await File.ReadAllTextAsync(filePath);
-            var chat = JsonSerializer.Deserialize<SavedChat>(json);
+            var chat = JsonSerializer.Deserialize<SavedChat>(json, _jsonOptions);
 
             System.Diagnostics.Debug.WriteLine($"Chat loaded: {chat?.Title} ({id})");
             return chat;
@@ -68,21 +73,21 @@ public class ChatStorageService
 
     public async Task<List<SavedChat>> LoadAllChatsAsync()
     {
-        var chats = new List<SavedChat>();
+        List<SavedChat> chats = [];
 
         try
         {
             if (!Directory.Exists(_chatsDirectory))
                 return chats;
 
-            var files = Directory.GetFiles(_chatsDirectory, "*.json");
+            var files = Directory.GetFiles(_chatsDirectory, Constants.DefaultSaveChatFileSearch);
 
             foreach (var file in files)
             {
                 try
                 {
                     var json = await File.ReadAllTextAsync(file);
-                    var chat = JsonSerializer.Deserialize<SavedChat>(json);
+                    var chat = JsonSerializer.Deserialize<SavedChat>(json, _jsonOptions);
 
                     if (chat != null)
                         chats.Add(chat);
@@ -94,7 +99,7 @@ public class ChatStorageService
             }
 
             // Sort by LastOpened descending (most recent first)
-            chats = chats.OrderByDescending(c => c.LastOpened).ToList();
+            chats = [.. chats.OrderByDescending(c => c.LastOpened)];
 
             System.Diagnostics.Debug.WriteLine($"Loaded {chats.Count} chat(s)");
         }
@@ -128,23 +133,23 @@ public class ChatStorageService
         await Task.CompletedTask;
     }
 
-    public string GenerateTitle(string firstMessage)
+    public static string GenerateTitle(string firstMessage)
     {
         if (string.IsNullOrWhiteSpace(firstMessage))
-            return "New Chat";
+            return DefaultNewChatTitle;
 
         // Take first 5 words
-        var words = firstMessage.Trim().Split(new[] { ' ', '\t', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
-        var titleWords = words.Take(5);
-        var title = string.Join(" ", titleWords);
+        var words = firstMessage.Trim().Split([Constants.CharSpace, Constants.CharTab, Constants.CharLineFeed, Constants.CharCarriageReturn], StringSplitOptions.RemoveEmptyEntries);
+        var titleWords = words.Take(TitleMaxNumberOfWords);
+        var title = string.Join(Constants.StringSpace, titleWords);
 
         // Add ellipsis if there are more words
-        if (words.Length > 5)
-            title += "...";
+        if (words.Length > TitleMaxNumberOfWords)
+            title += Constants.DefaultTextCutoffIndicator;
 
         // Limit title length to 50 characters max
-        if (title.Length > 50)
-            title = title.Substring(0, 47) + "...";
+        if (title.Length > Constants.MaximumTitleLength)
+            title = title[..(Constants.MaximumTitleLength - Constants.DefaultTextCutoffIndicator.Length)] + Constants.DefaultTextCutoffIndicator;
 
         return title;
     }

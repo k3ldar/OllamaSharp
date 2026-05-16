@@ -86,7 +86,7 @@ Settings are persisted using .NET MAUI Preferences and automatically applied to 
 
 ## License
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU GPL v3.0 - see the [LICENSE](LICENSE) file for details.
 
 ## Technologies Used
 

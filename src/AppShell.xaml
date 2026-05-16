@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <Shell
     x:Class="OllamaSharp.AppShell"
+    x:Name="AppShellRoot"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:local="clr-namespace:OllamaSharp"
+    xmlns:local="clr-namespace:OllamaSharp" 
+    xmlns:models="clr-namespace:OllamaSharp.Models"
+    xmlns:viewmodels="clr-namespace:OllamaSharp.ViewModels" 
+    x:DataType="viewmodels:AppShellViewModel"
     Title="OllamaSharp"
     FlyoutBackgroundColor="#F5F5F5">
 
@@ -54,7 +58,7 @@
                 </Grid>
 
                 <!-- New Chat Button -->
-                <Grid Padding="16,12" BackgroundColor="Transparent">
+                <Grid Padding="16,12" BackgroundColor="Transparent" x:DataType="viewmodels:AppShellViewModel">
                     <Grid.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding NewChatCommand}"/>
                     </Grid.GestureRecognizers>
@@ -71,7 +75,7 @@
                 </Grid>
 
                 <!-- Settings Button -->
-                <Grid Padding="16,12" BackgroundColor="Transparent">
+                <Grid Padding="16,12" BackgroundColor="Transparent" x:DataType="viewmodels:AppShellViewModel">
                     <Grid.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding NavigateToSettingsCommand}"/>
                     </Grid.GestureRecognizers>
@@ -88,7 +92,7 @@
                 </Grid>
 
                 <!-- About Button -->
-                <Grid Padding="16,12" BackgroundColor="Transparent">
+                <Grid Padding="16,12" BackgroundColor="Transparent" x:DataType="viewmodels:AppShellViewModel">
                     <Grid.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding NavigateToAboutCommand}"/>
                     </Grid.GestureRecognizers>
@@ -120,10 +124,10 @@
                                 SelectionMode="None"
                                 Margin="0">
                     <CollectionView.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="models:SavedChat">
                             <Grid Padding="16,8" ColumnDefinitions="*,Auto">
                                 <Grid.GestureRecognizers>
-                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type local:AppShell}}, Path=BindingContext.OpenChatCommand}"
+                                    <TapGestureRecognizer Command="{Binding Source={x:Reference AppShellRoot}, Path=BindingContext.OpenChatCommand}"
                                                           CommandParameter="{Binding .}"/>
                                 </Grid.GestureRecognizers>
 
@@ -145,7 +149,7 @@
                                         Padding="8,4"
                                         WidthRequest="40"
                                         HeightRequest="32"
-                                        Command="{Binding Source={RelativeSource AncestorType={x:Type local:AppShell}}, Path=BindingContext.DeleteChatCommand}"
+                                        Command="{Binding Source={x:Reference AppShellRoot}, Path=BindingContext.DeleteChatCommand}"
                                         CommandParameter="{Binding .}"/>
                             </Grid>
                         </DataTemplate>

@@ -8,7 +8,8 @@ namespace OllamaSharp;
 
 public static class MauiProgram
 {
-	public static MauiApp CreateMauiApp()
+
+    public static MauiApp CreateMauiApp()
 	{
 		var builder = MauiApp.CreateBuilder();
 		builder
@@ -16,9 +17,9 @@ public static class MauiProgram
 			.ConfigureSyncfusionToolkit()
 			.ConfigureFonts(fonts =>
 			{
-				fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
-				fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
-				fonts.AddFont("FluentSystemIcons-Regular.ttf", FluentUI.FontFamily);
+				fonts.AddFont(Constants.FontFileNameOpenSansRegular, Constants.FontNameOpenSansRegular);
+				fonts.AddFont(Constants.FontFileNameOpenSansSemiBold, Constants.FontNameOpenSansSemiBold);
+				fonts.AddFont(Constants.FontFileNameFluentSystemsIcons, FluentUI.FontFamily);
 			});
 
 		// Register Services
@@ -32,8 +33,8 @@ public static class MauiProgram
 		builder.Services.AddSingleton(sp =>
 		{
 			// Read server settings from preferences
-			var baseUrl = Preferences.Get(SettingsPage.PrefKeyServerUrl, "http://localhost:11434");
-			var model = Preferences.Get(SettingsPage.PrefKeyModelName, "llama3.2:3b");
+			var baseUrl = Preferences.Get(SettingsPage.PrefKeyServerUrl, Constants.DefaultOllamaUrl);
+			var model = Preferences.Get(SettingsPage.PrefKeyModelName, Constants.DefaultModel);
 
 			var ollamaService = new OllamaChatService(baseUrl, model);
 			return ollamaService;

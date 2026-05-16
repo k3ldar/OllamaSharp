@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>net9.0-android;net9.0-ios;net9.0-maccatalyst</TargetFrameworks>
-		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net9.0-windows10.0.19041.0</TargetFrameworks>
+		<TargetFrameworks>net10.0-android;net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
+		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net10.0-windows10.0.19041.0</TargetFrameworks>
 
 		<!-- Note for MacCatalyst:
 		The default runtime is maccatalyst-x64, except in Release config, in which case the default is maccatalyst-x64;maccatalyst-arm64.
@@ -17,6 +17,10 @@
 		<SingleProject>true</SingleProject>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>disable</Nullable>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+		<!-- Enable compiled bindings for RelativeSource bindings -->
+		<MauiEnableXamlCBindingWithSourceCompilation>true</MauiEnableXamlCBindingWithSourceCompilation>
 
 		<!-- Display name -->
 		<ApplicationTitle>OllamaSharp</ApplicationTitle>
@@ -39,38 +43,82 @@
 		<GeneratePackageOnBuild>False</GeneratePackageOnBuild>
 	</PropertyGroup>
 
+	<!-- General Android Debug Configuration -->
+	<PropertyGroup Condition="'$(Configuration)' == 'Debug' AND $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
+		<AndroidIncludeDebugSymbols>True</AndroidIncludeDebugSymbols>
+		<EmbedAssembliesIntoApk>True</EmbedAssembliesIntoApk>
+	</PropertyGroup>
+
+	<!-- .NET 10 Android Debug Configuration -->
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net10.0-android|AnyCPU'">
+		<AndroidKeyStore>False</AndroidKeyStore>
+		<ApplicationIdGuid>b7c8e4f1-9d2a-4c3e-8f0b-12a4d9c6f58e</ApplicationIdGuid>
+		<WarningLevel>9999</WarningLevel>
+		<NoWarn>1701;1702;XC0045;MVVMTK0045</NoWarn>
+		<DebugSymbols>True</DebugSymbols>
+		<DebugType>portable</DebugType>
+		<AndroidEnableProfiledAot>False</AndroidEnableProfiledAot>
+		<AndroidUseAapt2>True</AndroidUseAapt2>
+	</PropertyGroup>
+
+	<!-- .NET 10 Android Release Configuration -->
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net10.0-android|AnyCPU'">
+		<AndroidKeyStore>False</AndroidKeyStore>
+		<ApplicationIdGuid>b7c8e4f1-9d2a-4c3e-8f0b-12a4d9c6f58e</ApplicationIdGuid>
+		<WarningLevel>9999</WarningLevel>
+		<NoWarn>1701;1702;XC0045;MVVMTK0045</NoWarn>
+		<DebugSymbols>False</DebugSymbols>
+		<AndroidEnableProfiledAot>True</AndroidEnableProfiledAot>
+	</PropertyGroup>
+
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-android|AnyCPU'">
 	  <AndroidKeyStore>False</AndroidKeyStore>
 	  <ApplicationIdGuid>b7c8e4f1-9d2a-4c3e-8f0b-12a4d9c6f58e</ApplicationIdGuid>
+	  <WarningLevel>9999</WarningLevel>
+	  <NoWarn>1701;1702;XC0045;MVVMTK0045</NoWarn>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-android|AnyCPU'">
 	  <AndroidKeyStore>False</AndroidKeyStore>
 	  <ApplicationIdGuid>b7c8e4f1-9d2a-4c3e-8f0b-12a4d9c6f58e</ApplicationIdGuid>
+	  <WarningLevel>9999</WarningLevel>
+	  <NoWarn>1701;1702;XC0045;MVVMTK0045</NoWarn>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-ios|AnyCPU'">
 	  <ApplicationIdGuid>b7c8e4f1-9d2a-4c3e-8f0b-12a4d9c6f58e</ApplicationIdGuid>
+	  <WarningLevel>9999</WarningLevel>
+	  <NoWarn>1701;1702;XC0045;MVVMTK0045</NoWarn>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-maccatalyst|AnyCPU'">
 	  <ApplicationIdGuid>b7c8e4f1-9d2a-4c3e-8f0b-12a4d9c6f58e</ApplicationIdGuid>
+	  <WarningLevel>9999</WarningLevel>
+	  <NoWarn>1701;1702;XC0045;MVVMTK0045</NoWarn>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-windows10.0.19041.0|AnyCPU'">
 	  <ApplicationIdGuid>b7c8e4f1-9d2a-4c3e-8f0b-12a4d9c6f58e</ApplicationIdGuid>
+	  <WarningLevel>9999</WarningLevel>
+	  <NoWarn>1701;1702;XC0045;MVVMTK0045</NoWarn>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-ios|AnyCPU'">
 	  <ApplicationIdGuid>b7c8e4f1-9d2a-4c3e-8f0b-12a4d9c6f58e</ApplicationIdGuid>
+	  <WarningLevel>9999</WarningLevel>
+	  <NoWarn>1701;1702;XC0045;MVVMTK0045</NoWarn>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-maccatalyst|AnyCPU'">
 	  <ApplicationIdGuid>b7c8e4f1-9d2a-4c3e-8f0b-12a4d9c6f58e</ApplicationIdGuid>
+	  <WarningLevel>9999</WarningLevel>
+	  <NoWarn>1701;1702;XC0045;MVVMTK0045</NoWarn>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-windows10.0.19041.0|AnyCPU'">
 	  <ApplicationIdGuid>b7c8e4f1-9d2a-4c3e-8f0b-12a4d9c6f58e</ApplicationIdGuid>
+	  <WarningLevel>9999</WarningLevel>
+	  <NoWarn>1701;1702;XC0045;MVVMTK0045</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -92,9 +140,13 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="CleanCodeAnalyzer" Version="1.1.1">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-		<PackageReference Include="Microsoft.Maui.Controls" Version="9.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Maui.Controls" Version="10.0.60" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.8" />
 		<PackageReference Include="Syncfusion.Maui.Toolkit" Version="1.0.9" />
 	</ItemGroup>
 

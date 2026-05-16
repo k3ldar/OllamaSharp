@@ -9,6 +9,7 @@ namespace OllamaSharp.ViewModels;
 
 public partial class ChatViewModel : ObservableObject
 {
+    private const string NewChatText = "New Chat";
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SendCommand))]
     private string _inputText = string.Empty;
@@ -20,11 +21,14 @@ public partial class ChatViewModel : ObservableObject
     private Guid? _currentChatId;
 
     [ObservableProperty]
-    private string _currentChatTitle = "New Chat";
+    private string _currentChatTitle = NewChatText;
 
-    private CancellationTokenSource? _cancellationTokenSource;
+    [ObservableProperty]
+    private bool _hasMessages;
 
-    public ObservableCollection<UiChatMessage> Messages { get; } = new();
+    private CancellationTokenSource _cancellationTokenSource;
+
+    public ObservableCollection<UiChatMessage> Messages { get; } = [];
 
     private readonly OllamaChatService _chatService;
     private readonly ChatStorageService _storageService;
@@ -41,8 +45,8 @@ public partial class ChatViewModel : ObservableObject
     private void UpdateServiceFromPreferences()
     {
         // Read global settings from preferences
-        var systemRole = Preferences.Get(SettingsPage.PrefKeySystemRole, "You are lord of the universe and treat everyone like a servant, but still helpful at answering questions");
-        var maxHistoryPairs = Preferences.Get(SettingsPage.PrefKeyMaxHistoryPairs, 15);
+        var systemRole = Preferences.Get(SettingsPage.PrefKeySystemRole, Constants.DefaultSystemBehaviour);
+        var maxHistoryPairs = Preferences.Get(SettingsPage.PrefKeyMaxHistoryPairs, Constants.DefaultMaxHistoryPairs);
 
         _chatService.SystemRole = systemRole;
         _chatService.MaxHistoryPairs = maxHistoryPairs;
@@ -54,13 +58,18 @@ public partial class ChatViewModel : ObservableObject
     private async Task Send()
     {
         var text = InputText?.Trim();
-        if (string.IsNullOrEmpty(text)) return;
+
+        if (string.IsNullOrEmpty(text))
+            return;
 
         // Refresh settings from preferences before sending
         UpdateServiceFromPreferences();
 
         // Add the user's message
         Messages.Add(new UiChatMessage { From = Sender.User, Text = text });
+
+        // Update has messages flag
+        HasMessages = true;
 
         // Clear input
         InputText = string.Empty;
@@ -92,7 +101,7 @@ public partial class ChatViewModel : ObservableObject
         {
             MainThread.BeginInvokeOnMainThread(() =>
             {
-                assistantMessage.Text += "\n\n[Stopped by user]";
+                assistantMessage.Text += $"{Constants.CharLineFeed}{Constants.CharLineFeed}[Stopped by user]";
             });
         }
         catch (Exception ex)
@@ -118,7 +127,7 @@ public partial class ChatViewModel : ObservableObject
         // Don't save if there are no messages
         if (Messages.Count == 0)
         {
-            System.Diagnostics.Debug.WriteLine("No messages to save, skipping save");
+            System.Diagnostics.Debug.WriteLine(Constants.DebugMsgNoMessagesToSave);
             return;
         }
 
@@ -128,30 +137,31 @@ public partial class ChatViewModel : ObservableObject
             var savedChat = new SavedChat
             {
                 Id = CurrentChatId ?? Guid.NewGuid(),
-                Model = Preferences.Get(SettingsPage.PrefKeyModelName, "llama3.2:3b"),
-                SystemRole = Preferences.Get(SettingsPage.PrefKeySystemRole, "You are lord of the universe and treat everyone like a servant, but still helpful at answering questions"),
+                Model = Preferences.Get(SettingsPage.PrefKeyModelName, Constants.DefaultModel),
+                SystemRole = Preferences.Get(SettingsPage.PrefKeySystemRole, Constants.DefaultSystemBehaviour),
                 LastOpened = DateTimeOffset.Now,
-                Messages = Messages.Select(m => new SavedChatMessage
+                Messages = [.. Messages.Select(m => new SavedChatMessage
                 {
                     From = m.From,
                     Text = m.Text,
                     Timestamp = m.Timestamp
-                }).ToList()
+                })]
             };
 
             // Generate title from first user message if not already set
-            if (CurrentChatId == null || CurrentChatTitle == "New Chat")
+            if (CurrentChatId == null || CurrentChatTitle == NewChatText)
             {
                 var firstUserMessage = Messages.FirstOrDefault(m => m.From == Sender.User);
+
                 if (firstUserMessage != null)
                 {
-                    savedChat.Title = _storageService.GenerateTitle(firstUserMessage.Text);
+                    savedChat.Title = ChatStorageService.GenerateTitle(firstUserMessage.Text);
                     savedChat.Created = DateTimeOffset.Now;
                     CurrentChatTitle = savedChat.Title;
                 }
                 else
                 {
-                    savedChat.Title = "New Chat";
+                    savedChat.Title = NewChatText;
                 }
             }
             else
@@ -160,6 +170,7 @@ public partial class ChatViewModel : ObservableObject
 
                 // Load existing chat to preserve Created date
                 var existingChat = await _storageService.LoadChatAsync(savedChat.Id);
+
                 if (existingChat != null)
                 {
                     savedChat.Created = existingChat.Created;
@@ -179,7 +190,7 @@ public partial class ChatViewModel : ObservableObject
 
     public void StartNewChat()
     {
-        System.Diagnostics.Debug.WriteLine("Starting new chat");
+        System.Diagnostics.Debug.WriteLine(Constants.DebugMsgNewChatStarted);
 
         // Cancel any ongoing generation
         _cancellationTokenSource?.Cancel();
@@ -190,8 +201,9 @@ public partial class ChatViewModel : ObservableObject
         IsGenerating = false;
 
         CurrentChatId = null;
-        CurrentChatTitle = "New Chat";
+        CurrentChatTitle = NewChatText;
         Messages.Clear();
+        HasMessages = false;
         _chatService.ClearHistory();
         InputText = string.Empty;
 
@@ -235,14 +247,17 @@ public partial class ChatViewModel : ObservableObject
                 });
             }
 
+            // Update has messages flag
+            HasMessages = Messages.Count > 0;
+
             // Update service configuration with saved settings
-            var currentUrl = Preferences.Get(SettingsPage.PrefKeyServerUrl, "http://localhost:11434");
+            var currentUrl = Preferences.Get(SettingsPage.PrefKeyServerUrl, Constants.DefaultOllamaUrl);
             _chatService.UpdateConfiguration(currentUrl, chat.Model);
             _chatService.SystemRole = chat.SystemRole;
 
             // Restore conversation history to service
             var history = chat.Messages.Select(m => (
-                role: m.From == Sender.User ? "user" : "assistant",
+                role: m.From == Sender.User ? Constants.MessageTypeUser : Constants.MessageTypeAssistant,
                 content: m.Text
             )).ToList();
             _chatService.RestoreHistory(history);
@@ -263,12 +278,13 @@ public partial class ChatViewModel : ObservableObject
 
     // Triggers sending a predefined prompt from UI buttons
     [RelayCommand]
-    private async Task SendPrompt(string? prompt)
+    private async Task SendPrompt(string prompt)
     {
         if (string.IsNullOrWhiteSpace(prompt))
             return;
 
         InputText = prompt.Trim();
+
         if (CanSend())
         {
             await Send();

@@ -10,8 +10,8 @@ public static class HostingExtensions
     {
         builder.Services.AddSingleton<OllamaChatService>(sp =>
         {
-            var endpoint = "http://localhost:11434";
-            var model = "llama3.2:3b";
+            var endpoint = Constants.DefaultOllamaUrl;
+            var model = Constants.DefaultModel;
 
             return new OllamaChatService(endpoint, model);
         });

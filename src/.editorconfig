@@ -1,0 +1,19 @@
+﻿[*.cs]
+
+# IDE0290: Use primary constructor
+dotnet_diagnostic.IDE0290.severity = none
+
+# CC0003: Line exceeds maximum length
+dotnet_diagnostic.CC0003.severity = none
+
+# CC0004: If statement should have exactly one blank line above it
+dotnet_diagnostic.CC0004.severity = error
+
+# CA1865: Use char overload
+dotnet_diagnostic.CA1865.severity = none
+
+# CC0009: Avoid magic numbers (and un-named literals)
+dotnet_diagnostic.CC0009.severity = error
+
+# CC0008: Unnecessary blank line before closing brace
+dotnet_diagnostic.CC0008.severity = error

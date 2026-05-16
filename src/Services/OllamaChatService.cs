@@ -6,9 +6,11 @@ namespace OllamaSharp.Services;
 
 public class OllamaChatService
 {
+    private const int MessagePairCount = 2;
+    private const string ErrorNoResponse = "No response from Ollama.";
     private HttpClient _httpClient;
     private string _model;
-    private readonly List<OllamaMessage> _conversationHistory = new();
+    private readonly List<OllamaMessage> _conversationHistory = [];
 
     /// <summary>
     /// Maximum number of message pairs (user+assistant) to keep in history.
@@ -16,7 +18,7 @@ public class OllamaChatService
     /// Default: 15 pairs = 30 messages (good for most 3B-13B models)
     /// Recommended: 3B models: 15-20, 7B models: 20-30, 70B models: 5-10
     /// </summary>
-    public int MaxHistoryPairs { get; set; } = 15;
+    public int MaxHistoryPairs { get; set; } = Constants.DefaultMaxHistoryPairs;
 
     public OllamaChatService(string baseUrl, string model)
     {
@@ -27,14 +29,17 @@ public class OllamaChatService
     private void InitializeHttpClient(string baseUrl)
     {
         // Ensure base URL ends with /
-        if (!baseUrl.EndsWith('/'))
-            baseUrl += '/';
+        if (!baseUrl.EndsWith(Constants.CharForwardSlash))
+            baseUrl += Constants.CharForwardSlash;
+
+        if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out Uri uri))
+            return;
 
         _httpClient?.Dispose();
         _httpClient = new HttpClient 
         { 
-            BaseAddress = new Uri(baseUrl),
-            Timeout = TimeSpan.FromMinutes(5) // Increase timeout for longer responses
+            BaseAddress = uri,
+            Timeout = TimeSpan.FromMinutes(Constants.DefaultTimeOutInMinutes)
         };
     }
 
@@ -49,12 +54,12 @@ public class OllamaChatService
         System.Diagnostics.Debug.WriteLine($"OllamaChatService reconfigured: URL={baseUrl}, Model={model}");
     }
 
-    public string SystemRole { get; set; } = "You are lord of the universe and treat everyone like a servant, but still helpful at answering questions";
+    public string SystemRole { get; set; } = Constants.DefaultSystemBehaviour;
 
     private void TrimHistoryIfNeeded()
     {
         // Keep only the most recent N pairs (each pair = user message + assistant response = 2 messages)
-        int maxMessages = MaxHistoryPairs * 2;
+        int maxMessages = MaxHistoryPairs * MessagePairCount;
 
         if (_conversationHistory.Count > maxMessages)
         {
@@ -64,22 +69,23 @@ public class OllamaChatService
         }
     }
 
-    public async Task<string> SendMessageAsync(string userMessage, Action<string>? onPartialResponse = null, CancellationToken cancellationToken = default)
+    public async Task<string> SendMessageAsync(string userMessage, Action<string> onPartialResponse = null, CancellationToken cancellationToken = default)
     {
         // Trim history before building the request to stay within context limits
         TrimHistoryIfNeeded();
 
         // Build the message list including system role and conversation history
-        var messages = new List<OllamaMessage>();
-
-        // Always include system role first (never trimmed - essential for AI behavior)
-        messages.Add(new OllamaMessage { Role = "system", Content = SystemRole });
+        var messages = new List<OllamaMessage>
+        {
+            // Always include system role first (never trimmed - essential for AI behavior)
+            new() { Role = Constants.MessageRoleTypeSystem, Content = SystemRole }
+        };
 
         // Add conversation history (already trimmed to MaxHistoryPairs)
         messages.AddRange(_conversationHistory);
 
         // Add current user message
-        var currentUserMessage = new OllamaMessage { Role = "user", Content = userMessage };
+        var currentUserMessage = new OllamaMessage { Role = Constants.MessageTypeUser, Content = userMessage };
         messages.Add(currentUserMessage);
 
         var request = new OllamaChatRequest
@@ -91,7 +97,7 @@ public class OllamaChatService
 
         try
         {
-            using var httpRequest = new HttpRequestMessage(HttpMethod.Post, "api/chat");
+            using var httpRequest = new HttpRequestMessage(HttpMethod.Post, Constants.DefaultOllamaChatEndpoint);
             httpRequest.Content = JsonContent.Create(request);
 
             using var response = await _httpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
@@ -107,12 +113,14 @@ public class OllamaChatService
                 cancellationToken.ThrowIfCancellationRequested();
 
                 var line = await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
+
                 if (string.IsNullOrWhiteSpace(line))
                     continue;
 
                 try
                 {
-                    var chunk = JsonSerializer.Deserialize<OllamaChatResponse>(line);
+                    OllamaChatResponse chunk = JsonSerializer.Deserialize<OllamaChatResponse>(line);
+
                     if (chunk?.Message?.Content != null && !string.IsNullOrEmpty(chunk.Message.Content))
                     {
                         fullContent += chunk.Message.Content;
@@ -139,14 +147,14 @@ public class OllamaChatService
                 _conversationHistory.Add(currentUserMessage);
                 _conversationHistory.Add(new OllamaMessage 
                 { 
-                    Role = "assistant", 
+                    Role = Constants.MessageTypeAssistant, 
                     Content = fullContent 
                 });
 
                 return fullContent;
             }
 
-            return "No response from Ollama.";
+            return ErrorNoResponse;
         }
         catch (OperationCanceledException)
         {
@@ -188,7 +196,7 @@ public class OllamaChatRequest
     public string Model { get; set; } = string.Empty;
 
     [JsonPropertyName("messages")]
-    public List<OllamaMessage> Messages { get; set; } = new();
+    public List<OllamaMessage> Messages { get; set; } = [];
 
     [JsonPropertyName("stream")]
     public bool Stream { get; set; }
@@ -206,10 +214,10 @@ public class OllamaMessage
 public class OllamaChatResponse
 {
     [JsonPropertyName("model")]
-    public string? Model { get; set; }
+    public string Model { get; set; }
 
     [JsonPropertyName("message")]
-    public OllamaMessage? Message { get; set; }
+    public OllamaMessage Message { get; set; }
 
     [JsonPropertyName("done")]
     public bool Done { get; set; }

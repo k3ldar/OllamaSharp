@@ -12,7 +12,7 @@ public partial class AppShell : Shell
 
 		// Get ViewModel from DI
 		_viewModel = Application.Current?.Handler?.MauiContext?.Services?.GetRequiredService<AppShellViewModel>()
-			?? throw new InvalidOperationException("AppShellViewModel not registered");
+			?? throw new InvalidOperationException(Constants.ErrAppViewModelNotRegistered);
 
 		BindingContext = _viewModel;
 
