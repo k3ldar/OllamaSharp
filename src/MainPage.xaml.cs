@@ -5,7 +5,6 @@ namespace OllamaSharp;
 
 public partial class MainPage : ContentPage
 {
-	private const double BottomThresholdPixels = 20; // How close to bottom counts as "at bottom"
     private const string ErrChatViewModelNoteRegistered = "ChatViewModel not registered";
     private const string MsgUnsubscribedFromStreaming = "Unsubscribed from previous streaming message";
     private const string MsgSubscribedToStreaming = "Subscribed to new streaming message";
@@ -135,14 +134,6 @@ public partial class MainPage : ContentPage
 				if (vm.SendCommand.CanExecute(null))
 					vm.SendCommand.Execute(null);
 			}
-		}
-	}
-
-	private async void OnStreamingMessageUpdated()
-	{
-		if (!_shouldAutoScroll)
-		{
-			ScrollToBottom();
 		}
 	}
 
